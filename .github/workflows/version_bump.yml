@@ -11,8 +11,13 @@ on:
           - patch
           - minor
           - major
-          - rc
+          - pre-release
         required: true
+      preReleaseIdentifier:
+        description: 'Pre-release identifier (e.g., rc, alpha, beta)'
+        default: 'rc'
+        type: string
+        required: false
 
 jobs:
   build:
@@ -47,7 +52,11 @@ jobs:
       - name: Run version bump
         run: |
           git remote add upstream https://github.com/denoland/deno
-          ./tools/release/01_bump_crate_versions.ts --${{github.event.inputs.releaseKind}}
+          if [ -n "${{github.event.inputs.preReleaseIdentifier}}" ]; then
+            ./tools/release/01_bump_crate_versions.ts --${{github.event.inputs.releaseKind}} --pre-release-identifier=${{github.event.inputs.preReleaseIdentifier}}
+          else
+            ./tools/release/01_bump_crate_versions.ts --${{github.event.inputs.releaseKind}}
+          fi
 
       - name: Create PR
         env:

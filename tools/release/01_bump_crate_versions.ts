@@ -10,15 +10,25 @@ const denoRtCrate = workspace.getDenoRtCrate();
 const denoLibCrate = workspace.getDenoLibCrate();
 const originalCliVersion = cliCrate.version;
 
-if (Deno.args.some((a) => a === "--rc")) {
+if (Deno.args.some((a) => a === "--pre-release")) {
+  // Extract pre-release identifier from arguments, default to "rc"
+  const preReleaseIdentifierArg = Deno.args.find((a) =>
+    a.startsWith("--pre-release-identifier="),
+  );
+  const preReleaseIdentifier = preReleaseIdentifierArg
+    ? preReleaseIdentifierArg.split("=")[1]
+    : "rc";
+
   let cliVersion = semver.parse(cliCrate.version)!;
 
-  if (cliVersion.prerelease?.[0] != "rc") {
+  if (cliVersion.prerelease?.length > 0) {
     cliVersion = semver.increment(cliVersion, "minor");
   }
-  cliVersion = increment(cliVersion, "prerelease", { prerelease: "rc" });
+  cliVersion = semver.increment(cliVersion, "prerelease", {
+    prerelease: preReleaseIdentifier,
+  });
 
-  const version = cliVersion.toString();
+  const version = semver.format(cliVersion);
 
   await cliCrate.setVersion(version);
   await denoRtCrate.setVersion(version);
